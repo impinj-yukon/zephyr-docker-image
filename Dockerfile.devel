@@ -1,7 +1,9 @@
 # Developer Image (zephyr-build)
 
 ARG BASE_IMAGE
-FROM ${BASE_IMAGE:-zephyrprojectrtos/ci:latest}
+FROM ${BASE_IMAGE:-ci:latest}
+
+ARG USERNAME=user
 
 # Install packages
 RUN apt-get -y update && \
@@ -22,17 +24,20 @@ RUN apt-get clean -y && \
 	apt-get autoremove --purge -y && \
 	rm -rf /var/lib/apt/lists/*
 
-# Add entrypoint script
-ADD ./entrypoint.sh /home/user/entrypoint.sh
-RUN dos2unix /home/user/entrypoint.sh
-ENTRYPOINT ["/home/user/entrypoint.sh"]
+# Add entrypoint script (it is in home because
+# I can't figure out how to get the $USERNAME
+# into the string.)
+ADD ./entrypoint.sh /home/entrypoint.sh
+RUN dos2unix /home/entrypoint.sh
+ENTRYPOINT ["/home/entrypoint.sh"]
 
 # Add bash completion script
-ADD ./bash_completion /home/user/.bash_completion
-RUN mkdir -p /home/user/.bash_completion.d
+ADD ./bash_completion /home/$USERNAME/.bash_completion
+RUN mkdir -p /home/$USERNAME/.bash_completion.d
+
 
 # Switch to 'user' context
-USER user
+USER $USERNAME
 
 # Configure environment variables
 # ENV DISPLAY=:0
@@ -49,12 +54,12 @@ VOLUME ["/workdir"]
 # Expose port 5900 for VNC
 # EXPOSE 5900
 
-# Adjust 'user' home directory permissions
+# Adjust $USERNAME home directory permissions
 USER root
-RUN chown -R user:user /home/user
+RUN chown -R $USERNAME:$USERNAME /home/$USERNAME
 
 # Make 'user' default on launch
-USER user
+USER $USERNAME
 
 # Launch bash shell by default
 CMD ["/bin/bash"]
