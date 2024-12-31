@@ -1,7 +1,7 @@
 # CI Image (ci)
 
 ARG BASE_IMAGE
-FROM ${BASE_IMAGE:-ci-base:latest}
+FROM ${BASE_IMAGE:-zephyrprojectrtos/ci-base:latest}
 
 ARG USERNAME=user
 

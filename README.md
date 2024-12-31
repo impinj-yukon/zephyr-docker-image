@@ -18,22 +18,23 @@ docker build -f Dockerfile.base \
    --build-arg UID=$(id -u) \
    --build-arg GID=$(id -g) \
    --build-arg USERNAME=$(id -u -n) \
-    -t ci-base:latest .
+    -t ci-base:v4.0-branch .
 ```
 ```
 docker build -f Dockerfile.ci \
     --build-arg UID=$(id -u) \
     --build-arg GID=$(id -g) \
     --build-arg USERNAME=$(id -u -n) \
-    -t ci:latest .
+    --build-arg BASE_IMAGE=ci-base:v4.0-branch \
+    -t ci:v4.0-branch .
 ```
-
 ```
  docker build -f Dockerfile.devel \
      --build-arg UID=$(id -u) \
      --build-arg GID=$(id -g) \
      --build-arg USERNAME=$(id -u -n) \
-     -t devel:latest .
+     --build-arg BASE_IMAGE=ci:v4.0-branch \
+     -t devel:v4.0-branch .
 ```
 
 # Running the devel image with SSH-Agent
@@ -45,13 +46,15 @@ the SSH_AUTH_SOCK to the ssh-agent running on the host.
 docker run -ti \
     -v $HOME/west-workspace:/workdir \
     --mount type=bind,src=$SSH_AUTH_SOCK,target=/run/host-services/ssh-auth.sock \
-    -e SSH_AUTH_SOCK="/run/host-services/ssh-auth.sock" \
-    devel:latest
+    --env SSH_AUTH_SOCK="/run/host-services/ssh-auth.sock" \
+    devel:v4.0-branch
 ```
 # Running the devel image with USB Programming dongle.
 
 This command will connect the USB device to the container  (And the entrypoint.sh needs to be modified if the bus/dev values are different).
 Details are here https://impinj.atlassian.net/wiki/spaces/INDY/pages/911704083/Building+and+Flashing+Zephyr+in+Docker
+
+TODO: pull the relevant details into this document.
 
 ```
 docker run -ti \
@@ -59,8 +62,6 @@ docker run -ti \
     --device=/dev/bus/usb/001/003 \
     devel:latest
 ```
-
-
 
 # Below is the Documentation from the repo this was forked from
 
