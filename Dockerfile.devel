@@ -36,11 +36,15 @@ ADD ./bash_completion /home/$USERNAME/.bash_completion
 RUN mkdir -p /home/$USERNAME/.bash_completion.d
 
 
+# Adjust $USERNAME home directory permissions
+USER root
+RUN chown -R $USERNAME:$USERNAME /home/$USERNAME
+
 # Switch to 'user' context
 USER $USERNAME
 
 # Configure environment variables
-# ENV DISPLAY=:0
+ENV DISPLAY=:0
 ENV ZEPHYR_BASE=/workdir/zephyr
 
 # Set working directory
@@ -48,18 +52,11 @@ WORKDIR /workdir
 VOLUME ["/workdir"]
 
 # Configure VNC authentication
-# ARG VNCPASSWD=zephyr
-# RUN mkdir ~/.vnc && x11vnc -storepasswd ${VNCPASSWD} ~/.vnc/passwd
+ARG VNCPASSWD=zephyr
+RUN mkdir ~/.vnc && x11vnc -storepasswd ${VNCPASSWD} ~/.vnc/passwd
 
 # Expose port 5900 for VNC
-# EXPOSE 5900
-
-# Adjust $USERNAME home directory permissions
-USER root
-RUN chown -R $USERNAME:$USERNAME /home/$USERNAME
-
-# Make 'user' default on launch
-USER $USERNAME
+EXPOSE 5900
 
 # Launch bash shell by default
 CMD ["/bin/bash"]
