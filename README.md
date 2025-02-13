@@ -1,70 +1,3 @@
-# Local Zephyr Docker Image
-
-This repository contains the same Dockerfiles as listed below in the forked readme section.
-
-This has been modified to show how to connect a USB dongle for programming targets from docker container.
-
-This has been modified to support a command line argument when building the images to set the username that is created.
-This allows the user to connect connect the container to the ssh-agent running on the host (the usernames are required to match).
-This way west or git can be used to pull down repos that require ssh keys.
-
-Note that these images have been modified to build locally (originally they pulled from the pre built images).  So
-now each image needs to be built locally in order
-
-# Building the Images
-
-```
-docker build -f Dockerfile.base \
-   --build-arg UID=$(id -u) \
-   --build-arg GID=$(id -g) \
-   --build-arg USERNAME=$(id -u -n) \
-    -t ci-base:v4.0-branch .
-```
-```
-docker build -f Dockerfile.ci \
-    --build-arg UID=$(id -u) \
-    --build-arg GID=$(id -g) \
-    --build-arg USERNAME=$(id -u -n) \
-    --build-arg BASE_IMAGE=ci-base:v4.0-branch \
-    -t ci:v4.0-branch .
-```
-```
- docker build -f Dockerfile.devel \
-     --build-arg UID=$(id -u) \
-     --build-arg GID=$(id -g) \
-     --build-arg USERNAME=$(id -u -n) \
-     --build-arg BASE_IMAGE=ci:v4.0-branch \
-     -t devel:v4.0-branch .
-```
-
-# Running the devel image with SSH-Agent
-
-Then to run the docker image interactively with the following command that will mount the /workdir volume and connect
-the SSH_AUTH_SOCK to the ssh-agent running on the host.
-
-```
-docker run -ti \
-    -v $HOME/west-workspace:/workdir \
-    --mount type=bind,src=$SSH_AUTH_SOCK,target=/run/host-services/ssh-auth.sock \
-    --env SSH_AUTH_SOCK="/run/host-services/ssh-auth.sock" \
-    devel:v4.0-branch
-```
-# Running the devel image with USB Programming dongle.
-
-This command will connect the USB device to the container  (And the entrypoint.sh needs to be modified if the bus/dev values are different).
-Details are here https://impinj.atlassian.net/wiki/spaces/INDY/pages/911704083/Building+and+Flashing+Zephyr+in+Docker
-
-TODO: pull the relevant details into this document.
-
-```
-docker run -ti \
-    -v $HOME/west-workspace:/workdir \
-    --device=/dev/bus/usb/001/003 \
-    devel:latest
-```
-
-# Below is the Documentation from the repo this was forked from
-
 # Zephyr Docker Images
 
 This repository contains the Dockerfiles for the following images:
@@ -140,6 +73,50 @@ It can be used for building Zephyr samples and tests by mounting the Zephyr work
 
 ```
 docker run -ti -v <path to zephyr workspace>:/workdir zephyr-build:v<tag>
+```
+
+#### Using SSH Agent with Docker Image
+
+The docker images can be built to use the SSH agent on the host to provide authorization
+to assets like restricted git repos.  To do this there are a few requirements.  One of which
+is that the user name of the processes inside the docker container must match the real user
+name on the host.  The USERNAME build argument can be passed into the build process to override
+the default user name.  Note that all three images need to be built locally with this USERNAME
+argument set correctly.
+
+```
+docker build -f Dockerfile.base \
+   --build-arg UID=$(id -u) \
+   --build-arg GID=$(id -g) \
+   --build-arg USERNAME=$(id -u -n) \
+    -t ci-base:<tag> .
+```
+```
+docker build -f Dockerfile.ci \
+    --build-arg UID=$(id -u) \
+    --build-arg GID=$(id -g) \
+    --build-arg USERNAME=$(id -u -n) \
+    --build-arg BASE_IMAGE=ci-base:v4.0-branch \
+    -t ci:<tag> .
+```
+```
+ docker build -f Dockerfile.devel \
+     --build-arg UID=$(id -u) \
+     --build-arg GID=$(id -g) \
+     --build-arg USERNAME=$(id -u -n) \
+     --build-arg BASE_IMAGE=ci:v4.0-branch \
+     -t devel:<tag> .
+```
+
+Then when running the ci or devel image there are additional command line arguments to
+connect the host ssh-agent ports to the ssh-agent ports inside the container.
+
+```
+docker run -ti \
+    -v $HOME/Work/zephyrproject:/workdir \
+    --mount type=bind,src=$SSH_AUTH_SOCK,target=/run/host-services/ssh-auth.sock \
+    --env SSH_AUTH_SOCK="/run/host-services/ssh-auth.sock" \
+    devel:<tag>
 ```
 
 ### Usage
